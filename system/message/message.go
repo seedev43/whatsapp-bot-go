@@ -192,18 +192,19 @@ func Msg(sock *waSocket.Client, msg *events.Message) {
 				m.Reply("Bukan grup")
 				return
 			}
-			if !isAdmin {
-				m.Reply("Anda bukan admin grup ini")
-				return
-			}
-			if !isBotAdm {
-				m.Reply("Saya bukan admin grup ini")
-				return
-			}
 			if query == "" {
 				m.Reply(fmt.Sprintf("Contoh penggunaan:\n%sadd 628xxxxx", prefix))
 				return
 			}
+			if !isAdmin {
+				m.Reply("Anda bukan admin")
+				return
+			}
+			if !isBotAdm {
+				m.Reply("Bot bukan admin")
+				return
+			}
+
 			ok, err := sock.IsOnWhatsApp([]string{query})
 
 			if err != nil {
@@ -260,12 +261,16 @@ func Msg(sock *waSocket.Client, msg *events.Message) {
 				m.Reply("Bukan grup")
 				return
 			}
+			if query == "" {
+				m.Reply(fmt.Sprintf("Contoh penggunaan:\n%skick @mention", prefix))
+				return
+			}
 			if !isAdmin {
-				m.Reply("Anda bukan admin grup ini")
+				m.Reply("Anda bukan admin")
 				return
 			}
 			if !isBotAdm {
-				m.Reply("Saya bukan admin grup ini")
+				m.Reply("Bot bukan admin")
 				return
 			}
 			if m.Msg.Message.ExtendedTextMessage.ContextInfo.MentionedJid != nil {
@@ -280,8 +285,6 @@ func Msg(sock *waSocket.Client, msg *events.Message) {
 				}
 
 				m.Reply("Sayonara")
-			} else {
-				m.Reply("Mention pesan anggota yang akan di kick")
 			}
 
 			break
