@@ -208,6 +208,10 @@ func Msg(sock *waSocket.Client, msg *events.Message) {
 				return
 			}
 
+			if len(ok) == 0 {
+				return
+			}
+
 			if !ok[0].IsIn {
 				m.Reply("Nomor tidak terdaftar di WhatsApp")
 				return
