@@ -224,8 +224,6 @@ func Msg(sock *waSocket.Client, msg *events.Message) {
 				return
 			}
 
-			// m.Reply("Berhasil menambahkan " + ok[0].JID.User)
-
 			break
 
 		case "kick":
