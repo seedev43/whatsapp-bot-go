@@ -280,7 +280,7 @@ func Msg(sock *waSocket.Client, msg *events.Message) {
 				_, err := sock.UpdateGroupParticipants(from, []types.JID{parse_participant}, waSocket.ParticipantChangeRemove)
 
 				if err != nil {
-					m.Reply("Error: " + err.Error())
+					log.Println("Error removing participant:", err)
 					return
 				}
 
