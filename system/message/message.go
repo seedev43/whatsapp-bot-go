@@ -13,6 +13,7 @@ package message
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"image/jpeg"
 	"log"
@@ -22,20 +23,21 @@ import (
 	"whatsapp-bot-go/system/lib"
 
 	"github.com/amiruldev20/waSocket"
+	waProto "github.com/amiruldev20/waSocket/binary/proto"
 	"github.com/amiruldev20/waSocket/types"
 	"github.com/amiruldev20/waSocket/types/events"
+	"google.golang.org/protobuf/proto"
+
+	"github.com/joho/godotenv"
 	"github.com/nickalie/go-webpbin"
-	// "github.com/joho/godotenv"
-	// "github.com/nickalie/go-webpbin"
-	// "github.com/chai2010/webp"
 )
 
 func Msg(sock *waSocket.Client, msg *events.Message) {
 
-	// err := godotenv.Load()
-	// if err != nil {
-	// 	panic("Error load file .env")
-	// }
+	err := godotenv.Load()
+	if err != nil {
+		panic("Error load file .env")
+	}
 
 	var (
 		prefix    = os.Getenv("BOT_PREFIX")
@@ -66,15 +68,24 @@ func Msg(sock *waSocket.Client, msg *events.Message) {
 	fmt.Println("\n===============================\nNAME: " + pushName + "\nJID: " + sender + "\nTYPE: " + msg.Info.Type + "\nMessage: " + m.GetCMD() + "")
 	//fmt.Println(m.Msg.Message.GetPollUpdateMessage().GetMetadata())
 
+	if self && !isOwner {
+		return
+	}
+
+	if !strings.HasPrefix(args[0], prefix) {
+		command := strings.ToLower(args[0])
+
+		switch command {
+		//
+		}
+	}
+
 	// response command if chat with prefix
 	if strings.HasPrefix(args[0], prefix) {
 		command := strings.ToLower(args[0])
 		command = strings.Split(command, prefix)[1]
 
 		// Self
-		if self && !isOwner {
-			return
-		}
 
 		switch command {
 		case "bot":
@@ -163,14 +174,7 @@ func Msg(sock *waSocket.Client, msg *events.Message) {
 
 			m.SendImg(from, query)
 			break
-		case "sendimgc":
-			if query == "" {
-				m.Reply("Url cannot empty")
-				return
-			}
-			m.SendMsg(types.NewJID("120363199707822790", "newsletter"), "Send img tes")
-			m.SendImg(types.NewJID("120363199707822790", "newsletter"), query)
-			break
+
 			//command create channel
 			// jangan brutal ntar turu nangid :'(
 		case "nc":
@@ -217,12 +221,37 @@ func Msg(sock *waSocket.Client, msg *events.Message) {
 				return
 			}
 
-			_, err = sock.UpdateGroupParticipants(from, []types.JID{ok[0].JID}, waSocket.ParticipantChangeAdd)
+			res, err := sock.UpdateGroupParticipants(from, []types.JID{ok[0].JID}, waSocket.ParticipantChangeAdd)
 
 			if err != nil {
 				log.Println("Error adding participant:", err)
 				return
 			}
+
+			for _, item := range res {
+				if item.Status == "403" {
+					info, _ := sock.GetGroupInfo(from)
+					exp, _ := strconv.ParseInt(item.Content.Attrs["expiration"].(string), 10, 64)
+					log.Printf("\nParticipant is private: %s %s %s %d", item.Status, item.JID, item.Content.Attrs["code"].(string), exp)
+					sock.SendMessage(context.TODO(), item.JID, &waProto.Message{
+						GroupInviteMessage: &waProto.GroupInviteMessage{
+							InviteCode:       proto.String(item.Content.Attrs["code"].(string)),
+							InviteExpiration: proto.Int64(exp),
+							GroupJid:         proto.String(info.JID.String()),
+							GroupName:        proto.String(info.Name),
+							Caption:          proto.String(info.Topic),
+						},
+					})
+				} else if item.Status == "409" {
+					log.Printf("\nParticipant already in group: %s %s %+v", item.Status, item.JID, item.Content)
+				} else if item.Status == "200" {
+					log.Printf("\nAdded participant: %s %s %+v", item.Status, item.JID, item.Content)
+				} else {
+					log.Printf("\nUnknown status: %s %s %+v", item.Status, item.JID, item.Content)
+				}
+			}
+
+			// m.Reply("Berhasil menambahkan " + ok[0].JID.User)
 
 			break
 
